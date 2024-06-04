@@ -4,13 +4,13 @@ from fastapi import Depends, APIRouter
 from starlette import status
 from starlette.responses import Response
 
-from dependencies import get_product_use_case, get_pagination
+from dependencies import get_product_use_case, get_pagination, get_api_key
 from entities.pagination import Paginated, Pagination
 from entities.product import Product, CreateProduct, EditProduct
 from exceptions import ProductDoesNotExistException
 from use_cases.product_use_case import ProductUseCase
 
-router = APIRouter(prefix="/products", tags=["products"])
+router = APIRouter(prefix="/products", tags=["products"], dependencies=[Depends(get_api_key)])
 
 
 @router.get("/get-products", response_model=Paginated[Product], status_code=status.HTTP_200_OK)
