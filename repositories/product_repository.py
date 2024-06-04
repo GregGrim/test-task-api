@@ -14,12 +14,14 @@ class ProductRepository:
     def create_tables(self):
         Base.metadata.create_all(self.engine)
 
-    def get_products(self, page: int, limit: int) -> list[Product]:
+    def get_products(self, page: int, limit: int, category: str | None) -> list[Product]:
         with Session(self.engine) as session:
-            products = (
-                session.query(ProductModel).offset((page - 1) * limit).limit(limit).all()
-            )
-            return [Product.model_validate(product) for product in products]
+            query = session.query(ProductModel)
+            if category:
+                query = query.filter(ProductModel.category == category)
+
+            products = query.offset((page - 1) * limit).limit(limit).all()
+        return [Product.model_validate(product) for product in products]
 
     def add_product(self, product: CreateProduct) -> Product:
         with Session(self.engine) as session:
@@ -31,7 +33,7 @@ class ProductRepository:
 
             session.refresh(new_product)
 
-            return Product.model_validate(new_product)
+        return Product.model_validate(new_product)
 
     def edit_product(self, product_id: str, product_data: EditProduct) -> Product:
         with Session(self.engine) as session:
@@ -42,15 +44,17 @@ class ProductRepository:
             for key, value in update_data.items():
                 setattr(product, key, value)
 
+            session.add(product)
             session.commit()
-            return Product.model_validate(product)
+            session.refresh(product)
+        return Product.model_validate(product)
 
     def _get_product_by_id(self, product_id: str) -> ProductModel:
         with Session(self.engine) as session:
             product = session.query(ProductModel).where(ProductModel.id == product_id).first()
             if not product:
                 raise ProductDoesNotExistException()
-            return product
+        return product
 
     def delete_product(self, product_id: str):
         with Session(self.engine) as session:

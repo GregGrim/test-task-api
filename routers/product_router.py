@@ -17,8 +17,9 @@ router = APIRouter(prefix="/products", tags=["products"])
 async def get_products(
         product_use_case: Annotated[ProductUseCase, Depends(get_product_use_case)],
         pagination: Annotated[Pagination, Depends(get_pagination)],
+        category: str | None = None,
 ):
-    return product_use_case.get_products(pagination.page, pagination.limit)
+    return product_use_case.get_products(pagination.page, pagination.limit, category)
 
 
 @router.put("/add-product", response_model=Product, status_code=status.HTTP_201_CREATED)
@@ -35,7 +36,7 @@ async def edit_product(
         product_use_case: Annotated[ProductUseCase, Depends(get_product_use_case)],
 ):
     try:
-        result = product_use_case.edit_product(id=product_id, product=product)
+        result = product_use_case.edit_product(product_id=product_id, product=product)
     except ProductDoesNotExistException:
         return Response(status_code=status.HTTP_404_NOT_FOUND)
     return result
